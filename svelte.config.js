@@ -10,7 +10,10 @@ const config = {
 			assets: 'docs',
 			fallback: null,
 			precompress: false,
-			strict: true
+			strict: true,
+			embedded: true,
+			// this must match the subdirectory path that github pages creates
+			base: "/wrat-map",
 		})
 	}
 };
