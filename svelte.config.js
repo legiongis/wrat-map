@@ -4,16 +4,12 @@ import adapter from '@sveltejs/adapter-static';
 const config = {
 	kit: {
 		adapter: adapter({
-			// build to the 'docs' directory, which Github pages
-			// can be configured to read from (must be / or /docs)
-			pages: 'docs',
-			assets: 'docs',
+			pages: 'build',
+			assets: 'build',
 			fallback: null,
 			precompress: false,
 			strict: true,
 			embedded: true,
-			// this must match the subdirectory path that github pages creates
-			base: "/wrat-map",
 		})
 	}
 };
