@@ -1,7 +1,10 @@
 <script>
+    import 'ol/ol.css';
+    import 'ol-ext/dist/ol-ext.css';
+    import '../style.css';
+
     import { env } from '$env/dynamic/public';
     import { onMount } from 'svelte';
-    import 'ol/ol.css';
 
     import Map from 'ol/Map';
     import View from 'ol/View';
@@ -13,9 +16,11 @@
         Stroke,
         Style,
         Text,
+        Icon,
     } from 'ol/style.js';
 
-    import OSM from 'ol/source/OSM';
+    import Popup from 'ol-ext/overlay/Popup';
+
     import Stamen from 'ol/source/Stamen.js';
     import XYZ from 'ol/source/XYZ';
     import VectorSource from 'ol/source/Vector';
@@ -26,7 +31,7 @@
     
     import Point from 'ol/geom/Point.js';
     
-    import {fromLonLat} from 'ol/proj.js';
+    import {fromLonLat, toLonLat} from 'ol/proj.js';
 
     let showStudioList = false;
     let showSponsorList = false;
@@ -35,25 +40,20 @@
     const googleApiKey = env.PUBLIC_GOOGLE_API_KEY;
     
     const apiUrl = 'https://sheets.googleapis.com/v4/spreadsheets/'
-    const sheetUrl = apiUrl + spreadsheetId + '?key=' + googleApiKey
 
     const sponsorStyle = new Style({
-        // fill: new Fill({
-        //     color: 'rgba(255, 255, 255, 0.2)',
-        // }),
-        // stroke: new Stroke({
-        //     color: 'rgba(0, 0, 0, 0.5)',
-        //     lineDash: [10, 10],
-        //     width: 2,
-        // }),
-        image: new CircleStyle({
-            radius: 5,
-            stroke: new Stroke({
-            color: 'rgba(0, 0, 0, 0.7)',
-            }),
+        image: new RegularShape({
             fill: new Fill({
-            color: 'rgba(255, 255, 255, 0.2)',
+                color: '#ff5a34',
             }),
+            stroke: new Stroke({
+                color: 'rgba(50, 50, 50, 0.8)',
+                width: 2,
+            }),
+            points: 5,
+            radius: 12,
+            radius2: 6,
+            angle: 0,
         }),
     })
     let sponsorLayer = new VectorLayer({
@@ -61,51 +61,45 @@
         style: sponsorStyle,
         zIndex: 1,
     });
-    const studioStyle = new Style({
-        // fill: new Fill({
-        //     color: 'rgba(255, 255, 255, 0.2)',
-        // }),
-        // stroke: new Stroke({
-        //     color: 'rgba(0, 0, 0, 0.5)',
-        //     lineDash: [10, 10],
-        //     width: 2,
-        // }),
-        image: new CircleStyle({
-            radius: 5,
-            stroke: new Stroke({
-            color: 'rgba(0, 200, 0, 1)',
-            }),
-            fill: new Fill({
-            color: 'rgba(255, 255, 0, )',
-            }),
-        }),
-    })
     let studioLayer = new VectorLayer({
         source: new VectorSource(),
-        style: studioStyle,
+        style: function (feature) {
+            return new Style({
+                image: new Icon({
+                    anchor: [0.5, 46],
+                    anchorXUnits: 'fraction',
+                    anchorYUnits: 'pixels',
+                    src: '/icons/stop-icon-' + feature.get('Number') + '.png',
+                    scale: .28,
+                }),
+            })
+        },
         zIndex: 2,
     });
 
     const sponsorList = [];
     const studioList = [];
-    function addSheetDataToLayer(sheetName, layer, featureList) {
+    async function addSheetDataToLayer(sheetName, layer, featureList) {
         const url = apiUrl + spreadsheetId + "/values/" + sheetName + "?key=" + googleApiKey
-        fetch(url)
+        return fetch(url)
             .then(response => response.json())
             .then(result => {
                 const headers = result.values[0];
                 result.values.forEach( function(row, n) {
                     if (n != 0) {
-                        const properties = {};
-                        headers.forEach((k, i) => {properties[k] = row[i]})
-                        featureList.push(properties)
-                        layer.getSource().addFeature(new Feature({
+                        const feature = new Feature({
                             geometry: new Point(fromLonLat([
                                 row[headers.indexOf("Lon")],
                                 row[headers.indexOf("Lat")]
                             ])),
-                            properties: properties,
-                        }))
+                        })
+                        const properties = {};
+                        headers.forEach((k, i) => {properties[k] = row[i]})
+                        properties['source'] = sheetName;
+                        feature.setProperties(properties)
+                        
+                        layer.getSource().addFeature(feature)
+                        featureList.push(properties)
                     }
                 })
             })
@@ -185,48 +179,116 @@
         })
     }
 
-    const osmLayer = new TileLayer({
-        source: new OSM(),
-    })
-
     let showAboutPanel = false;
     let showLayerPanel = true;
     let layerBtnLabel;
-    $: showLayerPanel ? layerBtnLabel = "×" : layerBtnLabel = "•••"
+    $: showLayerPanel ? layerBtnLabel = "×" : layerBtnLabel = "i"
 
-    const layerLookup = {
-        studios: {
-            name: "Sanborn 1950",
-            visible: true,
-            opacity: 100,
-            layer: null,
-            locLink: "https://www.loc.gov/resource/g4014nm.g03376195009/?sp=9&st=image",
-        },
-        sponsors: {
-            name: "Sanborn 1937",
-            visible: false,
-            opacity: 100,
-            layer: null,
-            locLink: "https://www.loc.gov/resource/g4014nm.g03376193709/?sp=9&st=image",
+    function zoomAndPopup(featureProps, zoomLevel) {
+        if (map) {
+            map.getView().animate({
+                center: fromLonLat([featureProps.Lon, featureProps.Lat]),
+                zoom: zoomLevel,
+            })
+            if (featureProps.source == "2023-sponsors") {
+                handleSponsorPopup(featureProps)
+            } else if (featureProps.source == "2023-studios") {
+                handleStudioPopup(featureProps)
+            }
         }
     }
 
+    function handleSponsorPopup (featureProps) {
+        let popContent = `<h2>${featureProps.Name}</h2>`
+        popContent = popContent + `<p><a href="https://www.google.com/maps/dir//${featureProps.Lat},${featureProps.Lon}/" target="_blank">get directions &rarr;</a></p>`
+        popupSponsor.show(fromLonLat([featureProps.Lon, featureProps.Lat]), popContent);
+    }
+    function handleStudioPopup (featureProps) {
+        let artistList = ""
+        featureProps.Artists.split(";").forEach( function (artist) {
+            artistList = artistList + `<li>${artist}</li>`
+        })
+        let popContent = `<h2>${featureProps.Name}</h2>
+            <p><em>${featureProps.Address}</em><p>
+            <ul>${artistList}</ul>
+            `
+        popContent = popContent + `<p><a href="https://www.google.com/maps/dir//${featureProps.Lat},${featureProps.Lon}/" target="_blank">get directions &rarr;</a></p>`
+        popupStudio.show(fromLonLat([featureProps.Lon, featureProps.Lat]), popContent);
+    }
+
     let map;
-    onMount(() => {
-        addSheetDataToLayer("2023-sponsors", sponsorLayer, sponsorList);
-        addSheetDataToLayer("2023-studios", studioLayer, studioList);
+    // let popupSponsor;
+    // let popupStudio;
+    // Tried a lot of different methods for creating a popup, ended
+    // up with this one from ol-ext.
+    const popupSponsor = new Popup ({
+        popupClass: "shadow default", //"tooltips", "warning" "black" "default", "tips", "shadow",
+        closeBox: false,
+        autoPan: {
+            animation: {
+                duration: 100
+            }
+        }
+    });
+    const popupStudio = new Popup ({
+        popupClass: "shadow tips", //"tooltips", "warning" "black" "default", "tips", "shadow",
+        closeBox: false,
+        autoPan: {
+            animation: {
+                duration: 100
+            }
+        }
+    });
+    async function initMap() {
+
         map = new Map({
-            target: 'map',
+            target: document.getElementById('map'),
             layers: [
                 basemaps[0].layer,
                 sponsorLayer,
                 studioLayer,
             ],
-            view: new View({
-                center: fromLonLat([-90.8608076, 43.5300224]),
-                zoom: 13,
-            })
-        })
+            overlays: [popupStudio, popupSponsor]
+        });
+        await addSheetDataToLayer("2023-sponsors", sponsorLayer, sponsorList);
+        await addSheetDataToLayer("2023-studios", studioLayer, studioList);
+
+        map.getView().fit(studioLayer.getSource().getExtent(), {padding: [50,50,50,50]});
+        // change mouse cursor when over marker
+        map.on('pointermove', function (e) {
+            const pixel = map.getEventPixel(e.originalEvent);
+            const hit = map.hasFeatureAtPixel(pixel);
+            map.getTarget().style.cursor = hit ? 'pointer' : '';
+        });
+
+        // display popup on click
+        map.on('click', function (evt) {
+            popupSponsor.hide();
+            popupStudio.hide();
+            const feature = map.forEachFeatureAtPixel(evt.pixel, function (feature) {
+                return feature;
+            });
+            if (feature) {
+                zoomAndPopup(feature.getProperties(), 14)
+            }
+        });
+        return map
+    }
+
+    let mapEl;
+    $: {
+        if (mapEl) {
+            if (showLayerPanel) {
+                document.getElementById("map").style.width = "calc(100% - 250px)"
+            } else {
+                document.getElementById("map").style.width = "100%"
+            }
+        }
+    }
+
+    onMount(() => {
+        initMap()
+        mapEl = document.getElementById("map");
     });
 
 </script>
@@ -238,48 +300,62 @@
     </div>
 </div>
 {/if}
-<div id="map"></div>
+<main>
+    <div id="map"></div>
+    {#if showLayerPanel}
+    <div id="layer-panel">
+        <div>
+            <h1 hidden=true>Winding Roads Art Tour</h1>
+            <img src="/logo_green.png" alt="Winding Roads Art Tour logo" style="max-width: 100%;"/>
+        </div>
+        <div>
+            <p>Basemap testing
+            <button on:click={() => {setBasemap('mbOutdoors')}}>1</button>
+            <button on:click={() => {setBasemap('stamenTerrain')}}>2</button>
+            <button on:click={() => {setBasemap('watercolorLabels')}}>3</button>
+            <button on:click={() => {showAboutPanel=true}}>learn more</button>
+            </p>
+        </div>
+        <div class="panel-content">
+            <div class=layer-section>
+                <div><button class="layer-header" on:click={() => {showSponsorList=!showSponsorList}}>Visit our sponsors! {@html showSponsorList ? '&#8681;' : '&#8680;'}</button></div>
+                {#if showSponsorList}
+                <div class="layer-item-list">
+                    <ul>
+                        {#each sponsorList as s}
+                        <li>
+                            <button class="zoom-to" on:click={() => {zoomAndPopup(s, 16)}}>{s.Name}</button>
+                        </li>
+                        {/each}
+                    </ul>
+                </div>
+                {/if}
+            </div>
+            <div class=layer-section>
+                <div><button class="layer-header" on:click={() => {showStudioList=!showStudioList}}>Tour Stops {@html showStudioList ? '&#8681;' : '&#8680;'}</button></div>
+                {#if showStudioList}
+                <div class="layer-item-list">
+                    <ul>
+                        {#each studioList as s}
+                        <li>
+                            <button class="zoom-to" on:click={() => {zoomAndPopup(s, 16)}}><strong>{s.Number}:</strong> {s.Name}</button>
+                        </li>
+                        {/each}
+                    </ul>
+                </div>
+                {/if}
+            </div>
+        </div>
+    </div>
+    {/if}
+
+</main>
 <div id="panel-btn"><button on:click={() => {showLayerPanel=!showLayerPanel}} style="{showLayerPanel ? 'border-color:#333; color:#333;' : ''};">{layerBtnLabel}</button></div>
-{#if showLayerPanel}
-<div id="layer-panel">
-    <div>
-        <h1 hidden=true>Winding Roads Art Tour</h1>
-        <img src="/logo_green.png" alt="Winding Roads Art Tour logo" style="max-width: 100%;"/>
-        <p>Visit our studios and sponsors!</p>
-    </div>
-    <div>
-        <p>Basemap testing</p>
-        <button on:click={() => {setBasemap('mbOutdoors')}}>outdoors</button>
-        <button on:click={() => {setBasemap('stamenTerrain')}}>terrain</button>
-        <button on:click={() => {setBasemap('watercolorLabels')}}>watercolor</button>
-    </div>
-    <hr>
-    <div class="layer-item-list">
-        <button on:click={() => {showSponsorList=!showSponsorList}}>Our Sponsors</button>
-        {#if showSponsorList}
-        <ul>
-            {#each sponsorList as sponsor}
-            <li>{sponsor.Name}</li>
-            {/each}
-        </ul>
-        {/if}
-    </div>
-    <hr>
-    <div class="layer-item-list">
-        <button on:click={() => {showStudioList=!showStudioList}}>Studios Locations</button>
-        {#if showStudioList}
-        <ul>
-            {#each studioLayer.getSource().getFeatures() as studio}
-            <li>{studio.getProperties().Name}</li>
-            {/each}
-        </ul>
-        {/if}
-    </div>
-    <hr>
-    <div class="panel-footer"><button on:click={() => {showAboutPanel=true}}>learn more</button></div>
-</div>
-{/if}
 <style>
+
+    main {
+        display: flex;
+    }
     #map {
         height: 100vh;
     }
@@ -309,20 +385,48 @@
     }
 
     #layer-panel {
-        color: #333333;
-        position: absolute;
-        top: .5em;
-        right: .5em;
-        width: 250px;
-        max-width: 100%;
-        background: white;
-        border-radius: 4px;
-        border: 1px solid #333333;
-        padding: 15px;
         display: flex;
         flex-direction: column;
+        color: #333333;
+        width: 250px;
+        max-width: 100%;
+        height: 100vh;
+        background: white;
+        border-left: 1px solid #333333;
+        padding: 15px;
         align-items: center;
         z-index: 999;
+        overflow-y:scroll;
+    }
+
+    .layer-item-list {
+        overflow-y: scroll;
+    }
+
+    .panel-content ul {
+        list-style: none;
+        padding-left: 0px;
+    }
+
+    .panel-content button {
+        border: none;
+        background: none;
+        text-align: left;
+    }
+
+    .panel-content button.layer-header {
+        border: none;
+        /* background: red; */
+        width: 100%;
+    }
+
+    .panel-content button.zoom-to {
+        border: none;
+        font-weight: 300;
+        width: unset;
+    }
+    .panel-content button.zoom-to:hover {
+        text-decoration: underline;
     }
 
     .p-modal-bg {
@@ -372,4 +476,39 @@
         display: flex;
         justify-content: space-between;
     }
+
+    /* .ol-popup {
+        max-width: 350px;
+    } */
+    /*
+    .ol-popup:after, .ol-popup:before {
+        top: 100%;
+        border: solid transparent;
+        content: " ";
+        height: 0;
+        width: 0;
+        position: absolute;
+        pointer-events: none;
+    }
+    .ol-popup:after {
+        border-top-color: white;
+        border-width: 10px;
+        left: 48px;
+        margin-left: -10px;
+    }
+    .ol-popup:before {
+        border-top-color: #cccccc;
+        border-width: 11px;
+        left: 48px;
+        margin-left: -11px;
+    }
+    .ol-popup-closer {
+        text-decoration: none;
+        position: absolute;
+        top: 2px;
+        right: 8px;
+    }
+    .ol-popup-closer:after {
+        content: "✖";
+    } */
 </style>

@@ -1,0 +1,10 @@
+.ol-popup {
+    max-width: 350px;
+}
+
+.ol-popup.default > div {
+    border: 2px solid #ff5a34;
+}
+.ol-popup.default .anchor {
+    color: #ff5a34;
+}
