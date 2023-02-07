@@ -1,37 +1,118 @@
 <script>
-    import {onMount} from 'svelte';
+    import { env } from '$env/dynamic/public';
+    import { onMount } from 'svelte';
     import 'ol/ol.css';
-
-    import { browser } from '$app/environment';
-    // import logo from '$lib/assets/logo_green.png';
-
-    // import filter1893 from '$lib/filters/1893.geojson';
-    // import filter1908 from '$lib/filters/1908.geojson';
 
     import Map from 'ol/Map';
     import View from 'ol/View';
+    import Feature from 'ol/Feature';
+    import {
+        Circle as CircleStyle,
+        Fill,
+        RegularShape,
+        Stroke,
+        Style,
+        Text,
+    } from 'ol/style.js';
 
     import OSM from 'ol/source/OSM';
     import Stamen from 'ol/source/Stamen.js';
     import XYZ from 'ol/source/XYZ';
+    import VectorSource from 'ol/source/Vector';
 
     import TileLayer from 'ol/layer/Tile';
-    import {WebGLTile as WebGLTileLayer} from 'ol/layer';
+    import VectorLayer from 'ol/layer/Vector';
     import LayerGroup from 'ol/layer/Group';
-
+    
+    import Point from 'ol/geom/Point.js';
+    
     import {fromLonLat} from 'ol/proj.js';
 
     let showStudioList = false;
+    let showSponsorList = false;
+    
+    const spreadsheetId = env.PUBLIC_GOOGLE_SHEET_ID;
+    const googleApiKey = env.PUBLIC_GOOGLE_API_KEY;
+    
+    const apiUrl = 'https://sheets.googleapis.com/v4/spreadsheets/'
+    const sheetUrl = apiUrl + spreadsheetId + '?key=' + googleApiKey
 
-    let studioList = [
-        {
-            name: "studio 1",
-            hours: "etc"
-        },
-        {
-            name: "studio 2"
-        }
-    ]
+    const sponsorStyle = new Style({
+        // fill: new Fill({
+        //     color: 'rgba(255, 255, 255, 0.2)',
+        // }),
+        // stroke: new Stroke({
+        //     color: 'rgba(0, 0, 0, 0.5)',
+        //     lineDash: [10, 10],
+        //     width: 2,
+        // }),
+        image: new CircleStyle({
+            radius: 5,
+            stroke: new Stroke({
+            color: 'rgba(0, 0, 0, 0.7)',
+            }),
+            fill: new Fill({
+            color: 'rgba(255, 255, 255, 0.2)',
+            }),
+        }),
+    })
+    let sponsorLayer = new VectorLayer({
+        source: new VectorSource(),
+        style: sponsorStyle,
+        zIndex: 1,
+    });
+    const studioStyle = new Style({
+        // fill: new Fill({
+        //     color: 'rgba(255, 255, 255, 0.2)',
+        // }),
+        // stroke: new Stroke({
+        //     color: 'rgba(0, 0, 0, 0.5)',
+        //     lineDash: [10, 10],
+        //     width: 2,
+        // }),
+        image: new CircleStyle({
+            radius: 5,
+            stroke: new Stroke({
+            color: 'rgba(0, 200, 0, 1)',
+            }),
+            fill: new Fill({
+            color: 'rgba(255, 255, 0, )',
+            }),
+        }),
+    })
+    let studioLayer = new VectorLayer({
+        source: new VectorSource(),
+        style: studioStyle,
+        zIndex: 2,
+    });
+
+    const sponsorList = [];
+    const studioList = [];
+    function addSheetDataToLayer(sheetName, layer, featureList) {
+        const url = apiUrl + spreadsheetId + "/values/" + sheetName + "?key=" + googleApiKey
+        fetch(url)
+            .then(response => response.json())
+            .then(result => {
+                const headers = result.values[0];
+                result.values.forEach( function(row, n) {
+                    if (n != 0) {
+                        const properties = {};
+                        headers.forEach((k, i) => {properties[k] = row[i]})
+                        featureList.push(properties)
+                        layer.getSource().addFeature(new Feature({
+                            geometry: new Point(fromLonLat([
+                                row[headers.indexOf("Lon")],
+                                row[headers.indexOf("Lat")]
+                            ])),
+                            properties: properties,
+                        }))
+                    }
+                })
+            })
+            .catch(error => {
+                console.error('hmmmmm:', error);
+            })
+    }
 
     const mbk = 'pk.eyJ1IjoibGVnaW9uZ2lzIiwiYSI6ImNsYmNvazRvdTB2YWQzdm50YzRmcG5wYjAifQ.eOGJmZJHrXLo46_yTdftqQ'
     const mbSatellite = {
@@ -49,7 +130,8 @@
             source: new XYZ({
                 url: 'https://api.mapbox.com/styles/v1/legiongis/cldf5vrjm000w01pasy9x4lwm/tiles/{z}/{x}/{y}?access_token='+mbk,
                 tileSize: 512,
-            })
+            }),
+            zIndex: 0,
         })
     }
 
@@ -72,7 +154,8 @@
                         layer: 'terrain-labels',
                     }),
                 }),
-            ]
+            ],
+            zIndex: 0,
         })
     }
     
@@ -82,6 +165,7 @@
             source: new Stamen({
                 layer: 'terrain',
             }),
+            zIndex: 0,
         })
     }
 
@@ -93,7 +177,6 @@
 
     function setBasemap(layerId) {
         basemaps.forEach( function (layerDef) {
-            console.log(layerDef.id)
             if (layerDef.id == layerId){
                 map.addLayer(layerDef.layer)
             } else {
@@ -130,10 +213,14 @@
 
     let map;
     onMount(() => {
+        addSheetDataToLayer("2023-sponsors", sponsorLayer, sponsorList);
+        addSheetDataToLayer("2023-studios", studioLayer, studioList);
         map = new Map({
             target: 'map',
             layers: [
                 basemaps[0].layer,
+                sponsorLayer,
+                studioLayer,
             ],
             view: new View({
                 center: fromLonLat([-90.8608076, 43.5300224]),
@@ -141,36 +228,6 @@
             })
         })
     });
-
-    // GOOGLE SHEETS DATA ACQUISITION
-    // content pulled from elsewhere, needs to be reworked for Svelte
-    // paste in your published Google Sheets URL from the browser address bar
-    // var googleDocURL = 'https://docs.google.com/spreadsheets/d/1UHiOfqLCCfbyj--BZM1Y/edit#gid=0';
-
-    // // insert your own Google Sheets API key from https://console.developers.google.com
-    // var googleApiKey = 'fffffff-fffff';
-    // $.ajax({
-    //    url:'./Options.csv',
-    //    type:'HEAD',
-    //    error: function() {
-    //      // Options.csv does not exist in the root level, so use Tabletop to fetch data from
-    //      // the Google sheet
-
-    //      if (typeof googleApiKey !== 'undefined' && googleApiKey) {
-
-    //       var parse = function(res) {
-    //         return Papa.parse(Papa.unparse(res[0].values), {header: true} ).data;
-    //       }
-
-    //       var apiUrl = 'https://sheets.googleapis.com/v4/spreadsheets/'
-    //       var spreadsheetId = googleDocURL.indexOf('/d/') > 0
-    //         ? googleDocURL.split('/d/')[1].split('/')[0]
-    //         : googleDocURL
-
-    //       $.getJSON(
-    //         apiUrl + spreadsheetId + '?key=' + googleApiKey
-    //       ).then(function(data) {
-    //           var sheets = data.sheets.map(function(o) { return o.properties.title })
 
 </script>
 {#if showAboutPanel}
@@ -198,11 +255,22 @@
     </div>
     <hr>
     <div class="layer-item-list">
+        <button on:click={() => {showSponsorList=!showSponsorList}}>Our Sponsors</button>
+        {#if showSponsorList}
+        <ul>
+            {#each sponsorList as sponsor}
+            <li>{sponsor.Name}</li>
+            {/each}
+        </ul>
+        {/if}
+    </div>
+    <hr>
+    <div class="layer-item-list">
         <button on:click={() => {showStudioList=!showStudioList}}>Studios Locations</button>
         {#if showStudioList}
         <ul>
-            {#each studioList as studio}
-            <li>{studio.name}</li>
+            {#each studioLayer.getSource().getFeatures() as studio}
+            <li>{studio.getProperties().Name}</li>
             {/each}
         </ul>
         {/if}
