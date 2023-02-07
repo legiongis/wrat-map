@@ -19,8 +19,6 @@
         Icon,
     } from 'ol/style.js';
 
-    import Popup from 'ol-ext/overlay/Popup';
-
     import Stamen from 'ol/source/Stamen.js';
     import XYZ from 'ol/source/XYZ';
     import VectorSource from 'ol/source/Vector';
@@ -28,17 +26,16 @@
     import TileLayer from 'ol/layer/Tile';
     import VectorLayer from 'ol/layer/Vector';
     import LayerGroup from 'ol/layer/Group';
-    
+
     import Point from 'ol/geom/Point.js';
-    
     import {fromLonLat, toLonLat} from 'ol/proj.js';
 
     let showStudioList = false;
     let showSponsorList = false;
-    
+
     const spreadsheetId = env.PUBLIC_GOOGLE_SHEET_ID;
     const googleApiKey = env.PUBLIC_GOOGLE_API_KEY;
-    
+
     const apiUrl = 'https://sheets.googleapis.com/v4/spreadsheets/'
 
     const sponsorStyle = new Style({
@@ -117,7 +114,7 @@
                 tileSize: 512,
             })
         })
-    } 
+    }
     const mbOutdoors = {
         id: 'mbOutdoors',
         layer: new TileLayer({
@@ -152,7 +149,6 @@
             zIndex: 0,
         })
     }
-    
     const stamenTerrain = {
         id: 'stamenTerrain',
         layer: new TileLayer({
@@ -162,13 +158,11 @@
             zIndex: 0,
         })
     }
-
     const basemaps = [
         mbOutdoors,
         watercolorLabels,
         stamenTerrain,
     ]
-
     function setBasemap(layerId) {
         basemaps.forEach( function (layerDef) {
             if (layerDef.id == layerId){
@@ -190,6 +184,8 @@
                 center: fromLonLat([featureProps.Lon, featureProps.Lat]),
                 zoom: zoomLevel,
             })
+            popupSponsor.hide();
+            popupStudio.hide();
             if (featureProps.source == "2023-sponsors") {
                 handleSponsorPopup(featureProps)
             } else if (featureProps.source == "2023-studios") {
@@ -217,30 +213,9 @@
     }
 
     let map;
-    // let popupSponsor;
-    // let popupStudio;
-    // Tried a lot of different methods for creating a popup, ended
-    // up with this one from ol-ext.
-    const popupSponsor = new Popup ({
-        popupClass: "shadow default", //"tooltips", "warning" "black" "default", "tips", "shadow",
-        closeBox: false,
-        autoPan: {
-            animation: {
-                duration: 100
-            }
-        }
-    });
-    const popupStudio = new Popup ({
-        popupClass: "shadow tips", //"tooltips", "warning" "black" "default", "tips", "shadow",
-        closeBox: false,
-        autoPan: {
-            animation: {
-                duration: 100
-            }
-        }
-    });
+    let popupSponsor;
+    let popupStudio;
     async function initMap() {
-
         map = new Map({
             target: document.getElementById('map'),
             layers: [
@@ -252,7 +227,7 @@
         });
         await addSheetDataToLayer("2023-sponsors", sponsorLayer, sponsorList);
         await addSheetDataToLayer("2023-studios", studioLayer, studioList);
-
+        
         map.getView().fit(studioLayer.getSource().getExtent(), {padding: [50,50,50,50]});
         // change mouse cursor when over marker
         map.on('pointermove', function (e) {
@@ -260,7 +235,6 @@
             const hit = map.hasFeatureAtPixel(pixel);
             map.getTarget().style.cursor = hit ? 'pointer' : '';
         });
-
         // display popup on click
         map.on('click', function (evt) {
             popupSponsor.hide();
@@ -286,8 +260,36 @@
         }
     }
 
-    onMount(() => {
-        initMap()
+    onMount(async () => {
+        
+        // Tried a lot of different methods for creating a popup, ended
+        // up with this one from ol-ext.
+        // HOWEVER: this import must happen here because the Popup
+        // lib uses the global `window` variable (in ol-ext/utils/input/Base.js).
+        // Importing at the top of the file causes npm run build to fail with
+        // a 'window is not defined' error.
+        const Popup = (await import('ol-ext/overlay/Popup')).default;
+        popupSponsor = new Popup ({
+            popupClass: "shadow default", //"tooltips", "warning" "black" "default", "tips", "shadow",
+            closeBox: false,
+            autoPan: {
+                animation: {
+                    duration: 100
+                }
+            }
+        });
+        popupStudio = new Popup ({
+            popupClass: "shadow tips", //"tooltips", "warning" "black" "default", "tips", "shadow",
+            closeBox: false,
+            autoPan: {
+                animation: {
+                    duration: 100
+                }
+            }
+        });
+        await initMap()
+        showStudioList = true;
+        showSponsorList = true;
         mapEl = document.getElementById("map");
     });
 
@@ -318,7 +320,7 @@
         </div>
         <div class="panel-content">
             <div class=layer-section>
-                <div><button class="layer-header" on:click={() => {showSponsorList=!showSponsorList}}>Visit our sponsors! {@html showSponsorList ? '&#8681;' : '&#8680;'}</button></div>
+                <div><button class="layer-header" on:click={() => {showSponsorList=!showSponsorList}}>Visit our sponsors! {@html showSponsorList ? '&blacktriangledown;' : '&blacktriangleright;'}</button></div>
                 {#if showSponsorList}
                 <div class="layer-item-list">
                     <ul>
@@ -332,7 +334,7 @@
                 {/if}
             </div>
             <div class=layer-section>
-                <div><button class="layer-header" on:click={() => {showStudioList=!showStudioList}}>Tour Stops {@html showStudioList ? '&#8681;' : '&#8680;'}</button></div>
+                <div><button class="layer-header" on:click={() => {showStudioList=!showStudioList}}>Tour Stops {@html showStudioList ? '&blacktriangledown;' : '&blacktriangleright;'}</button></div>
                 {#if showStudioList}
                 <div class="layer-item-list">
                     <ul>
@@ -390,7 +392,7 @@
         color: #333333;
         width: 250px;
         max-width: 100%;
-        height: 100vh;
+        max-height: 100vh;
         background: white;
         border-left: 1px solid #333333;
         padding: 15px;
@@ -412,6 +414,7 @@
         border: none;
         background: none;
         text-align: left;
+        cursor: pointer;
     }
 
     .panel-content button.layer-header {
