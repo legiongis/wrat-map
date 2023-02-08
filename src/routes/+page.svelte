@@ -29,6 +29,7 @@
 
     import Point from 'ol/geom/Point.js';
     import {fromLonLat, toLonLat} from 'ol/proj.js';
+    import {extend} from 'ol/extent';
 
     let showStudioList = false;
     let showSponsorList = false;
@@ -180,10 +181,17 @@
 
     function zoomAndPopup(featureProps, zoomLevel) {
         if (map) {
-            map.getView().animate({
-                center: fromLonLat([featureProps.Lon, featureProps.Lat]),
-                zoom: zoomLevel,
-            })
+            if (zoomLevel > map.getView().getZoom()) {
+                map.getView().animate({
+                    center: fromLonLat([featureProps.Lon, featureProps.Lat]),
+                    zoom: zoomLevel,
+                })
+            } else {
+                map.getView().animate({
+                    center: fromLonLat([featureProps.Lon, featureProps.Lat]),
+                    // zoom: zoomLevel,
+                })
+            }
             popupSponsor.hide();
             popupStudio.hide();
             if (featureProps.source == "2023-sponsors") {
@@ -195,7 +203,9 @@
     }
 
     function handleSponsorPopup (featureProps) {
-        let popContent = `<h2>${featureProps.Name}</h2>`
+        let popContent = `<h2>${featureProps.Name}</h2>
+        <p><em>${featureProps.Address}</em><p>
+        `
         popContent = popContent + `<p><a href="https://www.google.com/maps/dir//${featureProps.Lat},${featureProps.Lon}/" target="_blank">get directions &rarr;</a></p>`
         popupSponsor.show(fromLonLat([featureProps.Lon, featureProps.Lat]), popContent);
     }
@@ -227,8 +237,9 @@
         });
         await addSheetDataToLayer("2023-sponsors", sponsorLayer, sponsorList);
         await addSheetDataToLayer("2023-studios", studioLayer, studioList);
-        
-        map.getView().fit(studioLayer.getSource().getExtent(), {padding: [50,50,50,50]});
+        const fullExtent = studioLayer.getSource().getExtent();
+        extend(fullExtent, sponsorLayer.getSource().getExtent())
+        map.getView().fit(fullExtent, {padding: [50,50,50,50]});
         // change mouse cursor when over marker
         map.on('pointermove', function (e) {
             const pixel = map.getEventPixel(e.originalEvent);
@@ -239,6 +250,8 @@
         map.on('click', function (evt) {
             popupSponsor.hide();
             popupStudio.hide();
+            console.log(toLonLat(evt.coordinate)[0])
+            console.log(toLonLat(evt.coordinate)[1])
             const feature = map.forEachFeatureAtPixel(evt.pixel, function (feature) {
                 return feature;
             });
