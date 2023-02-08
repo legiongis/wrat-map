@@ -298,6 +298,7 @@
 <div class="about-modal-bg">
     <div class="about-modal-content">
         <h1>Enjoy the tours!</h1>
+        <p>(add extra text intro here?)</p>
         <button on:click={() => {showAboutPanel=false}}>close</button>
     </div>
 </div>
@@ -305,18 +306,18 @@
 <main>
     {#if showLayerPanel}
     <div id="layer-panel">
-        <div>
+        <div class="logo-header">
             <h1 hidden=true>Winding Roads Art Tour</h1>
-            <img src="/logo_green.png" alt="Winding Roads Art Tour logo" style="max-width: 100%;"/>
+            <img class="logo-img" src="/logo_green.png" alt="Winding Roads Art Tour logo"/>
         </div>
-        <div>
+        <div class="layer-section"><button on:click={() => {showAboutPanel=true}}>learn more</button></div>
+        <!-- <div>
             <p>Basemap testing
             <button on:click={() => {setBasemap('mbOutdoors')}}>1</button>
             <button on:click={() => {setBasemap('stamenTerrain')}}>2</button>
             <button on:click={() => {setBasemap('watercolorLabels')}}>3</button>
-            <button on:click={() => {showAboutPanel=true}}>learn more</button>
             </p>
-        </div>
+        </div> -->
         <div class="panel-content">
             <div class=layer-section>
                 <div><button class="layer-header" on:click={() => {showSponsorList=!showSponsorList}}>Visit our sponsors! {@html showSponsorList ? '&blacktriangledown;' : '&blacktriangleright;'}</button></div>
@@ -339,7 +340,7 @@
                     <ul>
                         {#each studioList as s}
                         <li>
-                            <button class="zoom-to" on:click={() => {zoomAndPopup(s, 16)}}><strong>{s.Number}:</strong> {s.Name}</button>
+                            <button class="zoom-to" on:click={() => {zoomAndPopup(s, 16)}}><strong>{s.Number} &ndash;</strong> {s.Name}</button>
                         </li>
                         {/each}
                     </ul>
@@ -394,21 +395,33 @@
         max-height: 100vh;
         background: white;
         border-right: 1px solid #333333;
-        padding: 15px;
         align-items: center;
         z-index: 999;
         overflow-y:scroll;
     }
 
+    .logo-header {
+        padding: 10px;
+    }
+
+    .logo-img {
+        max-width: 100%;
+    }
+
+    .layer-section {
+        margin-bottom: 5px;
+    }
+
     .layer-item-list {
         overflow-y: scroll;
+        padding: 0px 10px;
     }
 
     .panel-content ul {
         list-style: none;
         padding-left: 0px;
     }
-
+    
     .panel-content button {
         border: none;
         background: none;
@@ -418,14 +431,19 @@
 
     .panel-content button.layer-header {
         border: none;
-        /* background: red; */
+        background: #597544;
+        color: white;
+        font-size: 1.25em;
         width: 100%;
+        padding: 5px;
+        text-align: center;
     }
-
+    
     .panel-content button.zoom-to {
         border: none;
         font-weight: 300;
         width: unset;
+        font-size: 1em;
     }
     .panel-content button.zoom-to:hover {
         text-decoration: underline;
