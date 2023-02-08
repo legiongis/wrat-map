@@ -303,7 +303,6 @@
 </div>
 {/if}
 <main>
-    <div id="map"></div>
     {#if showLayerPanel}
     <div id="layer-panel">
         <div>
@@ -350,7 +349,7 @@
         </div>
     </div>
     {/if}
-
+    <div id="map"></div>
 </main>
 <div id="panel-btn"><button on:click={() => {showLayerPanel=!showLayerPanel}} style="{showLayerPanel ? 'border-color:#333; color:#333;' : ''};">{layerBtnLabel}</button></div>
 <style>
@@ -394,7 +393,7 @@
         max-width: 100%;
         max-height: 100vh;
         background: white;
-        border-left: 1px solid #333333;
+        border-right: 1px solid #333333;
         padding: 15px;
         align-items: center;
         z-index: 999;
