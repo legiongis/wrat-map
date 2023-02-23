@@ -86,10 +86,7 @@
                 result.values.forEach( function(row, n) {
                     if (n != 0) {
                         const feature = new Feature({
-                            geometry: new Point(fromLonLat([
-                                row[headers.indexOf("Lon")],
-                                row[headers.indexOf("Lat")]
-                            ])),
+                            geometry: new Point(fromLonLat(row[headers.indexOf("Coordinates")].split(","))),
                         })
                         const properties = {};
                         headers.forEach((k, i) => {properties[k] = row[i]})
@@ -183,12 +180,12 @@
         if (map) {
             if (zoomLevel > map.getView().getZoom()) {
                 map.getView().animate({
-                    center: fromLonLat([featureProps.Lon, featureProps.Lat]),
+                    center: fromLonLat(featureProps.Coordinates.split(",")),
                     zoom: zoomLevel,
                 })
             } else {
                 map.getView().animate({
-                    center: fromLonLat([featureProps.Lon, featureProps.Lat]),
+                    center: fromLonLat(featureProps.Coordinates.split(",")),
                     // zoom: zoomLevel,
                 })
             }
@@ -203,11 +200,12 @@
     }
 
     function handleSponsorPopup (featureProps) {
+        const latLonStr = `${featureProps.Coordinates.split(",")[1]},${featureProps.Coordinates.split(",")[0]}`
         let popContent = `<h2>${featureProps.Name}</h2>
-        <p><em>${featureProps.Address}</em><p>
-        `
-        popContent = popContent + `<p><a href="https://www.google.com/maps/dir//${featureProps.Lat},${featureProps.Lon}/" target="_blank">get directions &rarr;</a></p>`
-        popupSponsor.show(fromLonLat([featureProps.Lon, featureProps.Lat]), popContent);
+        <p><em>${featureProps.Address}</em></p>
+        <p>${featureProps['Popup Description']}</p>`
+        popContent = popContent + `<p><a href="https://www.google.com/maps/dir//${latLonStr}/" target="_blank">get directions &rarr;</a></p>`
+        popupSponsor.show(fromLonLat(featureProps.Coordinates.split(",")), popContent);
     }
     function handleStudioPopup (featureProps) {
         let artistList = ""
@@ -215,11 +213,11 @@
             artistList = artistList + `<li>${artist}</li>`
         })
         let popContent = `<h2>${featureProps.Name}</h2>
-            <p><em>${featureProps.Address}</em><p>
-            <ul>${artistList}</ul>
-            `
-        popContent = popContent + `<p><a href="https://www.google.com/maps/dir//${featureProps.Lat},${featureProps.Lon}/" target="_blank">get directions &rarr;</a></p>`
-        popupStudio.show(fromLonLat([featureProps.Lon, featureProps.Lat]), popContent);
+            <p><em>${featureProps.Address}</em></p>
+            <p>Artist(s) at this studio:</p>
+            <ul>${artistList}</ul>`
+        popContent = popContent + `<p><a href="https://www.google.com/maps/dir//${featureProps.Coordinates}/" target="_blank">get directions &rarr;</a></p>`
+        popupStudio.show(fromLonLat(featureProps.Coordinates.split(",")), popContent);
     }
 
     let map;
@@ -250,14 +248,15 @@
         map.on('click', function (evt) {
             popupSponsor.hide();
             popupStudio.hide();
-            console.log(toLonLat(evt.coordinate)[0])
-            console.log(toLonLat(evt.coordinate)[1])
             const feature = map.forEachFeatureAtPixel(evt.pixel, function (feature) {
                 return feature;
             });
             if (feature) {
                 zoomAndPopup(feature.getProperties(), 14)
             }
+            const lon = Number.parseFloat(toLonLat(evt.coordinate)[0]).toFixed(6);
+            const lat = Number.parseFloat(toLonLat(evt.coordinate)[1]).toFixed(6);
+            console.log(`${lon},${lat}`);
         });
         return map
     }
@@ -310,8 +309,10 @@
 {#if showAboutPanel}
 <div class="about-modal-bg">
     <div class="about-modal-content">
-        <h1>Enjoy the tours!</h1>
-        <p>(add extra text intro here?)</p>
+        <h1>Welcome!</h1>
+        <p>The Winding Roads Art Tour, with headquarters in Viroqua, Wisconsin, is an invitation to meet with artists in their studios. Treat yourself to a weekend of creativity and inspiration on this self-guided tour through the beauty of the Driftless landscape.</p>
+        <p>As you wind your way through the springtime rolling hills you will discover a diversity of artistic expression, meeting artists in their homes and creative workplaces along the way. Take this opportunity to view and purchase artwork with an understanding of the people, process and story behind its creation.</p>
+        <h3><em>Thank you to our sponsors!</em></h3>
         <button on:click={() => {showAboutPanel=false}}>close</button>
     </div>
 </div>
@@ -322,15 +323,18 @@
         <div class="logo-header">
             <h1 hidden=true>Winding Roads Art Tour</h1>
             <img class="logo-img" src="/logo_green.png" alt="Winding Roads Art Tour logo"/>
+            
         </div>
-        <div class="layer-section"><button on:click={() => {showAboutPanel=true}}>learn more</button></div>
-        <!-- <div>
-            <p>Basemap testing
+        <div class="layer-section" style="margin-bottom: 15px;">
+            <button on:click={() => {showAboutPanel=true}}>Learn more about the tour...</button>
+        </div>
+        <div>
+            <!-- <p>Basemap testing
             <button on:click={() => {setBasemap('mbOutdoors')}}>1</button>
             <button on:click={() => {setBasemap('stamenTerrain')}}>2</button>
             <button on:click={() => {setBasemap('watercolorLabels')}}>3</button>
-            </p>
-        </div> -->
+            </p> -->
+        </div>
         <div class="panel-content">
             <div class=layer-section>
                 <div><button class="layer-header" on:click={() => {showSponsorList=!showSponsorList}}>Visit our sponsors! {@html showSponsorList ? '&blacktriangledown;' : '&blacktriangleright;'}</button></div>
@@ -339,7 +343,10 @@
                     <ul>
                         {#each sponsorList as s}
                         <li>
-                            <button class="zoom-to" on:click={() => {zoomAndPopup(s, 16)}}>{s.Name}</button>
+                            <button class="zoom-to" on:click={() => {zoomAndPopup(s, 16)}}>
+                                {#if s.Food == 'Y'}<i class="fa fa-spoon" title="Food here"></i>{/if}
+                                {#if s.Lodging == 'Y'}<i class="fa fa-hotel" title="Lodging here"></i>{/if}
+                                {s.Name}</button>
                         </li>
                         {/each}
                     </ul>
@@ -499,6 +506,11 @@
         display: flex;
         flex-direction: column;
         align-items: center;
+        text-align: center;
+    }
+
+    .about-modal-content p {
+        margin: 0 0 15px 0;
     }
 
     .panel-content {
