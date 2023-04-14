@@ -324,7 +324,7 @@
         <div class="logo-header">
             <h1 hidden=true>Winding Roads Art Tour</h1>
             <a href="http://www.windingroadsart.com" title="Winding Roads Art Tour - Home">
-                <img class="logo-img" src="http://www.windingroadsart.com/uploads/1/4/5/0/14507072/published/logo-597544-01.png" alt="Winding Roads Art Tour logo"/>
+                <img class="logo-img" src="/logo_green23.png" alt="Winding Roads Art Tour logo"/>
             </a>        
         </div>
         <div class="layer-section" style="margin-bottom: 15px;">
