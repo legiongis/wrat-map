@@ -212,11 +212,12 @@
         featureProps.Artists.split(";").forEach( function (artist) {
             artistList = artistList + `<li>${artist}</li>`
         })
+        const latLonStr = `${featureProps.Coordinates.split(",")[1]},${featureProps.Coordinates.split(",")[0]}`
         let popContent = `<h2>${featureProps.Name}</h2>
             <p><em>${featureProps.Address}</em></p>
             <p>Artist(s) at this studio:</p>
             <ul>${artistList}</ul>`
-        popContent = popContent + `<p><a href="https://www.google.com/maps/dir//${featureProps.Coordinates}/" target="_blank">get directions &rarr;</a></p>`
+        popContent = popContent + `<p><a href="https://www.google.com/maps/dir//${latLonStr}/" target="_blank">get directions &rarr;</a></p>`
         popupStudio.show(fromLonLat(featureProps.Coordinates.split(",")), popContent);
     }
 
