@@ -323,8 +323,9 @@
     <div id="layer-panel">
         <div class="logo-header">
             <h1 hidden=true>Winding Roads Art Tour</h1>
-            <img class="logo-img" src="/logo_green.png" alt="Winding Roads Art Tour logo"/>
-            
+            <a href="http://www.windingroadsart.com" title="Winding Roads Art Tour - Home">
+                <img class="logo-img" src="http://www.windingroadsart.com/uploads/1/4/5/0/14507072/published/logo-597544-01.png" alt="Winding Roads Art Tour logo"/>
+            </a>        
         </div>
         <div class="layer-section" style="margin-bottom: 15px;">
             <button on:click={() => {showAboutPanel=true}}>Learn more about the tour...</button>
@@ -415,7 +416,7 @@
         max-width: 100%;
         max-height: 100vh;
         background: white;
-        border-right: 1px solid #333333;
+        border-right: 1px solid #597544;
         align-items: center;
         z-index: 999;
         overflow-y:scroll;
