@@ -435,7 +435,6 @@
     }
 
     .layer-item-list {
-        overflow-y: scroll;
         padding: 0px 10px;
     }
 
