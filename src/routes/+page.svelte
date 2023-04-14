@@ -471,22 +471,6 @@
         text-decoration: underline;
     }
 
-    .p-modal-bg {
-        position: absolute;
-        background: white;
-        z-index: 1000000;
-        height: 100vh;
-        width: 100%;
-    }
-    .p-modal-content {
-        position: absolute;
-        top: 3em;
-        right: 0;
-        left: 0;
-        margin: auto;
-        width: 200px;
-    }
-
     .about-modal-bg {
         position: absolute;
         background: rgba(255, 255, 255, .6);
@@ -509,6 +493,8 @@
         flex-direction: column;
         align-items: center;
         text-align: center;
+        border-radius: 4px;
+        border: 1px solid #597544;
     }
 
     .about-modal-content p {
@@ -517,11 +503,6 @@
 
     .panel-content {
         width: 100%;
-    }
-
-    .layer-item {
-        display: flex;
-        justify-content: space-between;
     }
 
     /* .ol-popup {
