@@ -339,6 +339,20 @@
         </div>
         <div class="panel-content">
             <div class=layer-section>
+                <div><button class="layer-header" on:click={() => {showStudioList=!showStudioList}}>Tour Stops {@html showStudioList ? '&blacktriangledown;' : '&blacktriangleright;'}</button></div>
+                {#if showStudioList}
+                <div class="layer-item-list">
+                    <ul>
+                        {#each studioList as s}
+                        <li>
+                            <button class="zoom-to" on:click={() => {zoomAndPopup(s, 16)}}><strong>{s.Number} &ndash;</strong> {s.Name}</button>
+                        </li>
+                        {/each}
+                    </ul>
+                </div>
+                {/if}
+            </div>
+            <div class=layer-section>
                 <div><button class="layer-header" on:click={() => {showSponsorList=!showSponsorList}}>Visit our sponsors! {@html showSponsorList ? '&blacktriangledown;' : '&blacktriangleright;'}</button></div>
                 {#if showSponsorList}
                 <div class="layer-item-list">
@@ -349,20 +363,6 @@
                                 {#if s.Food == 'Y'}<i class="fa fa-spoon" title="Food here"></i>{/if}
                                 {#if s.Lodging == 'Y'}<i class="fa fa-hotel" title="Lodging here"></i>{/if}
                                 {s.Name}</button>
-                        </li>
-                        {/each}
-                    </ul>
-                </div>
-                {/if}
-            </div>
-            <div class=layer-section>
-                <div><button class="layer-header" on:click={() => {showStudioList=!showStudioList}}>Tour Stops {@html showStudioList ? '&blacktriangledown;' : '&blacktriangleright;'}</button></div>
-                {#if showStudioList}
-                <div class="layer-item-list">
-                    <ul>
-                        {#each studioList as s}
-                        <li>
-                            <button class="zoom-to" on:click={() => {zoomAndPopup(s, 16)}}><strong>{s.Number} &ndash;</strong> {s.Name}</button>
                         </li>
                         {/each}
                     </ul>
