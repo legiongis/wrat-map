@@ -353,7 +353,7 @@
                 {/if}
             </div>
             <div class=layer-section>
-                <div><button class="layer-header" on:click={() => {showSponsorList=!showSponsorList}}>Visit our sponsors! {@html showSponsorList ? '&blacktriangledown;' : '&blacktriangleright;'}</button></div>
+                <div><button class="layer-header" on:click={() => {showSponsorList=!showSponsorList}}>Visit our Sponsors! {@html showSponsorList ? '&blacktriangledown;' : '&blacktriangleright;'}</button></div>
                 {#if showSponsorList}
                 <div class="layer-item-list">
                     <ul>
