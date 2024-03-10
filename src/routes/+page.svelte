@@ -3,7 +3,11 @@
     import 'ol-ext/dist/ol-ext.css';
     import '../style.css';
 
-    import { env } from '$env/dynamic/public';
+    import { 
+        PUBLIC_GOOGLE_SHEET_ID,
+        PUBLIC_GOOGLE_API_KEY,
+        PUBLIC_MAPBOX_API_TOKEN,
+    } from '$env/static/public';
     import { onMount } from 'svelte';
 
     import Map from 'ol/Map';
@@ -33,9 +37,6 @@
 
     let showStudioList = false;
     let showSponsorList = false;
-
-    const spreadsheetId = env.PUBLIC_GOOGLE_SHEET_ID;
-    const googleApiKey = env.PUBLIC_GOOGLE_API_KEY;
 
     const apiUrl = 'https://sheets.googleapis.com/v4/spreadsheets/'
 
@@ -78,7 +79,7 @@
     const sponsorList = [];
     const studioList = [];
     async function addSheetDataToLayer(sheetName, layer, featureList) {
-        const url = apiUrl + spreadsheetId + "/values/" + sheetName + "?key=" + googleApiKey
+        const url = apiUrl + PUBLIC_GOOGLE_SHEET_ID + "/values/" + sheetName + "?key=" + PUBLIC_GOOGLE_API_KEY
         return fetch(url)
             .then(response => response.json())
             .then(result => {
@@ -103,12 +104,11 @@
             })
     }
 
-    const mbk = 'pk.eyJ1IjoibGVnaW9uZ2lzIiwiYSI6ImNsYmNvazRvdTB2YWQzdm50YzRmcG5wYjAifQ.eOGJmZJHrXLo46_yTdftqQ'
     const mbSatellite = {
         id: 'mbSatellite',
         layer: new TileLayer({
             source: new XYZ({
-                url: 'https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v10/tiles/{z}/{x}/{y}?access_token='+mbk,
+                url: 'https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v10/tiles/{z}/{x}/{y}?access_token='+PUBLIC_MAPBOX_API_TOKEN,
                 tileSize: 512,
             })
         })
@@ -117,7 +117,7 @@
         id: 'mbOutdoors',
         layer: new TileLayer({
             source: new XYZ({
-                url: 'https://api.mapbox.com/styles/v1/legiongis/cldf5vrjm000w01pasy9x4lwm/tiles/{z}/{x}/{y}?access_token='+mbk,
+                url: 'https://api.mapbox.com/styles/v1/legiongis/cldf5vrjm000w01pasy9x4lwm/tiles/{z}/{x}/{y}?access_token='+PUBLIC_MAPBOX_API_TOKEN,
                 tileSize: 512,
             }),
             zIndex: 0,
