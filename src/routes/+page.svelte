@@ -34,6 +34,7 @@
     import Point from 'ol/geom/Point.js';
     import {fromLonLat, toLonLat} from 'ol/proj.js';
     import {extend} from 'ol/extent';
+    import {transformExtent} from 'ol/proj';
 
     let showStudioList = false;
     let showSponsorList = false;
@@ -60,15 +61,20 @@
         style: sponsorStyle,
         zIndex: 1,
     });
+
+    function getIcon(feature) {
+        console.log("ok")
+        return '/icons/stop-icon-' + feature.get('Number') + '.png'
+    }
     let studioLayer = new VectorLayer({
         source: new VectorSource(),
-        style: function (feature) {
+        style: function (f) {
             return new Style({
                 image: new Icon({
                     anchor: [0.5, 46],
                     anchorXUnits: 'fraction',
                     anchorYUnits: 'pixels',
-                    src: '/icons/stop-icon-' + feature.get('Number') + '.png',
+                    src: f.get('Number') == "★" ? '/icons/star.png' : `/icons/stop-icon-${f.get('Number')}.png`,
                     scale: .28,
                 }),
             })
@@ -93,7 +99,7 @@
                         headers.forEach((k, i) => {properties[k] = row[i]})
                         properties['source'] = sheetName;
                         feature.setProperties(properties)
-                        
+
                         layer.getSource().addFeature(feature)
                         featureList.push(properties)
                     }
@@ -191,9 +197,9 @@
             }
             popupSponsor.hide();
             popupStudio.hide();
-            if (featureProps.source == "2023-sponsors") {
+            if (featureProps.source == "2024-sponsors") {
                 handleSponsorPopup(featureProps)
-            } else if (featureProps.source == "2023-studios") {
+            } else if (featureProps.source == "2024-studios") {
                 handleStudioPopup(featureProps)
             }
         }
@@ -224,19 +230,21 @@
     let map;
     let popupSponsor;
     let popupStudio;
+    let fullExtent;
+    const vrqExtent = transformExtent([-90.894528,43.553563,-90.879051,43.562047], "EPSG:4326", "EPSG:3857");
     async function initMap() {
         map = new Map({
             target: document.getElementById('map'),
             layers: [
                 basemaps[0].layer,
-                sponsorLayer,
+                // sponsorLayer,
                 studioLayer,
             ],
             overlays: [popupStudio, popupSponsor]
         });
-        await addSheetDataToLayer("2023-sponsors", sponsorLayer, sponsorList);
-        await addSheetDataToLayer("2023-studios", studioLayer, studioList);
-        const fullExtent = studioLayer.getSource().getExtent();
+        await addSheetDataToLayer("2024-sponsors", sponsorLayer, sponsorList);
+        await addSheetDataToLayer("2024-studios", studioLayer, studioList);
+        fullExtent = studioLayer.getSource().getExtent();
         extend(fullExtent, sponsorLayer.getSource().getExtent())
         map.getView().fit(fullExtent, {padding: [50,50,50,50]});
         // change mouse cursor when over marker
@@ -329,6 +337,11 @@
         </div>
         <div class="layer-section" style="margin-bottom: 15px;">
             <button on:click={() => {showAboutPanel=true}}>Learn more about the tour...</button>
+        </div>
+        <div class="layer-section" style="margin-bottom: 15px;">
+            Zoom to:
+            <button on:click={() => {map.getView().fit(fullExtent, {padding: [50,50,50,50]});}}>All</button>
+            <button on:click={() => {map.getView().fit(vrqExtent, {padding: [50,50,50,50]});}}>Viroqua</button>
         </div>
         <div>
             <!-- <p>Basemap testing
