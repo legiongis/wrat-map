@@ -62,10 +62,6 @@
         zIndex: 1,
     });
 
-    function getIcon(feature) {
-        console.log("ok")
-        return '/icons/stop-icon-' + feature.get('Number') + '.png'
-    }
     let studioLayer = new VectorLayer({
         source: new VectorSource(),
         style: function (f) {
