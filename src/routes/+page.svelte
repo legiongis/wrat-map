@@ -44,15 +44,15 @@
     const sponsorStyle = new Style({
         image: new RegularShape({
             fill: new Fill({
-                color: '#ff5a34',
+                color: '#6EF0D9',
             }),
             stroke: new Stroke({
                 color: 'rgba(50, 50, 50, 0.8)',
-                width: 2,
+                width: 1,
             }),
-            points: 5,
-            radius: 12,
-            radius2: 6,
+            points: 4,
+            radius: 10,
+            radius2: 4,
             angle: 0,
         }),
     })
@@ -207,10 +207,10 @@
 
     function handleSponsorPopup (featureProps) {
         const latLonStr = `${featureProps.Coordinates.split(",")[1]},${featureProps.Coordinates.split(",")[0]}`
-        let popContent = `<h2>${featureProps.Name}</h2>
-        <p><em>${featureProps.Address}</em></p>
-        <p>${featureProps['Popup Description']}</p>`
-        popContent = popContent + `<p><a href="https://www.google.com/maps/dir//${latLonStr}/" target="_blank">get directions &rarr;</a></p>`
+        let popContent = `<h2>${featureProps.Name}</h2>`
+        popContent += `<p><em>${featureProps.Address}</em></p>`
+        if (featureProps['Popup Description']) {popContent += `<p>${featureProps['Popup Description']}</p>`}
+        popContent += `<p><a href="https://www.google.com/maps/dir//${latLonStr}/" target="_blank">get directions &rarr;</a></p>`
         popupSponsor.show(fromLonLat(featureProps.Coordinates.split(",")), popContent);
     }
     function handleStudioPopup (featureProps) {
@@ -237,7 +237,7 @@
             target: document.getElementById('map'),
             layers: [
                 basemaps[0].layer,
-                // sponsorLayer,
+                sponsorLayer,
                 studioLayer,
             ],
             overlays: [popupStudio, popupSponsor]
@@ -267,7 +267,7 @@
             const lat = Number.parseFloat(toLonLat(evt.coordinate)[1]).toFixed(6);
             console.log(`${lon},${lat}`);
         });
-        return map
+        return map;
     }
 
     let mapEl;
