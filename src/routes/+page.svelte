@@ -39,6 +39,9 @@
     let showStudioList = false;
     let showSponsorList = false;
 
+    const STUDIO_SHEET_NAME = "2026-studios"
+    const SPONSOR_SHEET_NAME = "2026-sponsors"
+
     const apiUrl = 'https://sheets.googleapis.com/v4/spreadsheets/'
 
     const sponsorStyle = new Style({
@@ -193,9 +196,9 @@
             }
             popupSponsor.hide();
             popupStudio.hide();
-            if (featureProps.source == "2024-sponsors") {
+            if (featureProps.source == SPONSOR_SHEET_NAME) {
                 handleSponsorPopup(featureProps)
-            } else if (featureProps.source == "2024-studios") {
+            } else if (featureProps.source == STUDIO_SHEET_NAME) {
                 handleStudioPopup(featureProps)
             }
         }
@@ -238,8 +241,8 @@
             ],
             overlays: [popupStudio, popupSponsor]
         });
-        await addSheetDataToLayer("2024-sponsors", sponsorLayer, sponsorList);
-        await addSheetDataToLayer("2024-studios", studioLayer, studioList);
+        await addSheetDataToLayer(SPONSOR_SHEET_NAME, sponsorLayer, sponsorList);
+        await addSheetDataToLayer(STUDIO_SHEET_NAME, studioLayer, studioList);
         fullExtent = studioLayer.getSource().getExtent();
         extend(fullExtent, sponsorLayer.getSource().getExtent())
         map.getView().fit(fullExtent, {padding: [50,50,50,50]});
