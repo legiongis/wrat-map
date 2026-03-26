@@ -371,7 +371,7 @@
                     <ul>
                         {#each studioList as s}
                         <li>
-                            <button class="zoom-to" on:click={() => {zoomAndPopup(s, 16)}}><strong>{s.Number} &ndash;</strong> {s.Name}</button>
+                            <button class="zoom-to" on:click={() => {zoomAndPopup(s, 16)}}><span style="font-weight:700">{s.Number}</span> &ndash; {s.Name}</button>
                         </li>
                         {/each}
                     </ul>
