@@ -44,21 +44,35 @@
 
     const apiUrl = 'https://sheets.googleapis.com/v4/spreadsheets/'
 
-    const sponsorStyle = new Style({
-        image: new RegularShape({
-            fill: new Fill({
-                color: '#6EF0D9',
-            }),
-            stroke: new Stroke({
-                color: 'rgba(50, 50, 50, 0.8)',
-                width: 1,
-            }),
-            points: 4,
-            radius: 10,
-            radius2: 4,
-            angle: 0,
-        }),
-    })
+    const sponsorStyle = function (f) {
+        if (f.get('Icon')) {
+            return new Style({
+                image: new Icon({
+                    anchor: [0.5, 46],
+                    anchorXUnits: 'fraction',
+                    anchorYUnits: 'pixels',
+                    src: `https://pinhead.ink/v20/${f.get('Icon')}.svg`,
+                    scale: .18,
+                }),
+            })
+        } else {
+            return new Style({
+                image: new RegularShape({
+                    fill: new Fill({
+                        color: '#6EF0D9',
+                    }),
+                    stroke: new Stroke({
+                        color: 'rgba(50, 50, 50, 0.8)',
+                        width: 1,
+                    }),
+                    points: 4,
+                    radius: 10,
+                    radius2: 4,
+                    angle: 0,
+                }),
+            })
+        }
+    }
     let sponsorLayer = new VectorLayer({
         source: new VectorSource(),
         style: sponsorStyle,
