@@ -35,6 +35,8 @@
     import {fromLonLat, toLonLat} from 'ol/proj.js';
     import {extend} from 'ol/extent';
     import {transformExtent} from 'ol/proj';
+  import { readable } from 'svelte/store';
+  import { Circle } from 'ol/geom';
 
     let showStudioList = false;
     let showSponsorList = false;
@@ -46,15 +48,25 @@
 
     const sponsorStyle = function (f) {
         if (f.get('Icon')) {
-            return new Style({
-                image: new Icon({
-                    anchor: [0.5, 46],
-                    anchorXUnits: 'fraction',
-                    anchorYUnits: 'pixels',
-                    src: `https://pinhead.ink/v20/${f.get('Icon')}.svg`,
-                    scale: .18,
+            return [
+                new Style({
+                    image: new CircleStyle({
+                        fill: new Fill({
+                            color: 'rgba(255, 255, 255, 0.7)',
+                        }),
+                        radius: 15,
+                    })
                 }),
-            })
+                new Style({
+                    image: new Icon({
+                        anchor: [0.5, .25],
+                        anchorXUnits: 'fraction',
+                        anchorYUnits: 'fraction',
+                        src: `https://pinhead.ink/v20/${f.get('Icon')}.svg`,
+                        scale: .12,
+                    }),
+                })
+            ]
         } else {
             return new Style({
                 image: new RegularShape({
@@ -88,7 +100,7 @@
                     anchorXUnits: 'fraction',
                     anchorYUnits: 'pixels',
                     src: f.get('Number') == "★" ? '/icons/star.png' : `/icons/stop-icon-${f.get('Number')}.png`,
-                    scale: .28,
+                    scale: .3,
                 }),
             })
         },
