@@ -47,43 +47,43 @@
     const apiUrl = 'https://sheets.googleapis.com/v4/spreadsheets/'
 
     const sponsorStyle = function (f) {
-        if (f.get('Icon')) {
-            return [
-                new Style({
-                    image: new CircleStyle({
-                        fill: new Fill({
-                            color: 'rgba(255, 255, 255, 0.7)',
-                        }),
-                        radius: 15,
-                    })
+        // if (f.get('Icon')) {
+        //     return [
+        //         new Style({
+        //             image: new CircleStyle({
+        //                 fill: new Fill({
+        //                     color: 'rgba(255, 255, 255, 0.7)',
+        //                 }),
+        //                 radius: 15,
+        //             })
+        //         }),
+        //         new Style({
+        //             image: new Icon({
+        //                 anchor: [0.5, .25],
+        //                 anchorXUnits: 'fraction',
+        //                 anchorYUnits: 'fraction',
+        //                 src: `https://pinhead.ink/v20/${f.get('Icon')}.svg`,
+        //                 scale: .12,
+        //             }),
+        //         })
+        //     ]
+        // } else {
+        return new Style({
+            image: new RegularShape({
+                fill: new Fill({
+                    color: '#6EF0D9',
                 }),
-                new Style({
-                    image: new Icon({
-                        anchor: [0.5, .25],
-                        anchorXUnits: 'fraction',
-                        anchorYUnits: 'fraction',
-                        src: `https://pinhead.ink/v20/${f.get('Icon')}.svg`,
-                        scale: .12,
-                    }),
-                })
-            ]
-        } else {
-            return new Style({
-                image: new RegularShape({
-                    fill: new Fill({
-                        color: '#6EF0D9',
-                    }),
-                    stroke: new Stroke({
-                        color: 'rgba(50, 50, 50, 0.8)',
-                        width: 1,
-                    }),
-                    points: 4,
-                    radius: 10,
-                    radius2: 4,
-                    angle: 0,
+                stroke: new Stroke({
+                    color: 'rgba(50, 50, 50, 0.8)',
+                    width: 1,
                 }),
-            })
-        }
+                points: 4,
+                radius: 10,
+                radius2: 4,
+                angle: 0,
+            }),
+        })
+        // }
     }
     let sponsorLayer = new VectorLayer({
         source: new VectorSource(),
@@ -383,7 +383,7 @@
                     <ul>
                         {#each studioList as s}
                         <li>
-                            <button class="zoom-to" on:click={() => {zoomAndPopup(s, 16)}}><span style="font-weight:700">{s.Number}</span> &ndash; {s.Name}</button>
+                            <button class="zoom-to" on:click={() => {zoomAndPopup(s, 16)}}><span style="font-weight:700">{s.Number}</span> {s.Name}</button>
                         </li>
                         {/each}
                     </ul>
@@ -398,9 +398,8 @@
                         {#each sponsorList as s}
                         {#if s.Coordinates}
                         <li>
-                            <button class="zoom-to" on:click={() => {zoomAndPopup(s, 16)}}>
-                                {#if s.Food == 'Y'}<i class="fa fa-spoon" title="Food here"></i>{/if}
-                                {#if s.Lodging == 'Y'}<i class="fa fa-hotel" title="Lodging here"></i>{/if}
+                            <button class="zoom-to" style="display:flex; gap:4px;" on:click={() => {zoomAndPopup(s, 16)}}>
+                                {#if s.Icon}<img style="height:1em;" src={`https://pinhead.ink/v20/${s.Icon}.svg`} alt=""/>{/if}
                                 {s.Name}</button>
                         </li>
                         {/if}
