@@ -396,12 +396,14 @@
                 <div class="layer-item-list">
                     <ul>
                         {#each sponsorList as s}
+                        {#if s.Coordinates}
                         <li>
                             <button class="zoom-to" on:click={() => {zoomAndPopup(s, 16)}}>
                                 {#if s.Food == 'Y'}<i class="fa fa-spoon" title="Food here"></i>{/if}
                                 {#if s.Lodging == 'Y'}<i class="fa fa-hotel" title="Lodging here"></i>{/if}
                                 {s.Name}</button>
                         </li>
+                        {/if}
                         {/each}
                     </ul>
                 </div>
