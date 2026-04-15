@@ -35,27 +35,56 @@
     import {fromLonLat, toLonLat} from 'ol/proj.js';
     import {extend} from 'ol/extent';
     import {transformExtent} from 'ol/proj';
+  import { readable } from 'svelte/store';
+  import { Circle } from 'ol/geom';
 
     let showStudioList = false;
     let showSponsorList = false;
 
+    const STUDIO_SHEET_NAME = "2026-studios"
+    const SPONSOR_SHEET_NAME = "2026-sponsors"
+
     const apiUrl = 'https://sheets.googleapis.com/v4/spreadsheets/'
 
-    const sponsorStyle = new Style({
-        image: new RegularShape({
-            fill: new Fill({
-                color: '#6EF0D9',
+    const sponsorStyle = function (f) {
+        // if (f.get('Icon')) {
+        //     return [
+        //         new Style({
+        //             image: new CircleStyle({
+        //                 fill: new Fill({
+        //                     color: 'rgba(255, 255, 255, 0.7)',
+        //                 }),
+        //                 radius: 15,
+        //             })
+        //         }),
+        //         new Style({
+        //             image: new Icon({
+        //                 anchor: [0.5, .25],
+        //                 anchorXUnits: 'fraction',
+        //                 anchorYUnits: 'fraction',
+        //                 src: `https://pinhead.ink/v20/${f.get('Icon')}.svg`,
+        //                 scale: .12,
+        //             }),
+        //         })
+        //     ]
+        // } else {
+        return new Style({
+            image: new RegularShape({
+                fill: new Fill({
+                    color: '#6EF0D9',
+                }),
+                stroke: new Stroke({
+                    color: 'rgba(50, 50, 50, 0.8)',
+                    width: 1,
+                }),
+                points: 4,
+                radius: 10,
+                radius2: 4,
+                angle: 0,
             }),
-            stroke: new Stroke({
-                color: 'rgba(50, 50, 50, 0.8)',
-                width: 1,
-            }),
-            points: 4,
-            radius: 10,
-            radius2: 4,
-            angle: 0,
-        }),
-    })
+        })
+        // }
+    }
     let sponsorLayer = new VectorLayer({
         source: new VectorSource(),
         style: sponsorStyle,
@@ -71,7 +100,7 @@
                     anchorXUnits: 'fraction',
                     anchorYUnits: 'pixels',
                     src: f.get('Number') == "★" ? '/icons/star.png' : `/icons/stop-icon-${f.get('Number')}.png`,
-                    scale: .28,
+                    scale: .3,
                 }),
             })
         },
@@ -193,9 +222,9 @@
             }
             popupSponsor.hide();
             popupStudio.hide();
-            if (featureProps.source == "2024-sponsors") {
+            if (featureProps.source == SPONSOR_SHEET_NAME) {
                 handleSponsorPopup(featureProps)
-            } else if (featureProps.source == "2024-studios") {
+            } else if (featureProps.source == STUDIO_SHEET_NAME) {
                 handleStudioPopup(featureProps)
             }
         }
@@ -238,8 +267,8 @@
             ],
             overlays: [popupStudio, popupSponsor]
         });
-        await addSheetDataToLayer("2024-sponsors", sponsorLayer, sponsorList);
-        await addSheetDataToLayer("2024-studios", studioLayer, studioList);
+        await addSheetDataToLayer(SPONSOR_SHEET_NAME, sponsorLayer, sponsorList);
+        await addSheetDataToLayer(STUDIO_SHEET_NAME, studioLayer, studioList);
         fullExtent = studioLayer.getSource().getExtent();
         extend(fullExtent, sponsorLayer.getSource().getExtent())
         map.getView().fit(fullExtent, {padding: [50,50,50,50]});
@@ -354,7 +383,7 @@
                     <ul>
                         {#each studioList as s}
                         <li>
-                            <button class="zoom-to" on:click={() => {zoomAndPopup(s, 16)}}><strong>{s.Number} &ndash;</strong> {s.Name}</button>
+                            <button class="zoom-to" on:click={() => {zoomAndPopup(s, 16)}}><span style="font-weight:700">{s.Number}</span> {s.Name}</button>
                         </li>
                         {/each}
                     </ul>
@@ -367,12 +396,13 @@
                 <div class="layer-item-list">
                     <ul>
                         {#each sponsorList as s}
+                        {#if s.Coordinates}
                         <li>
-                            <button class="zoom-to" on:click={() => {zoomAndPopup(s, 16)}}>
-                                {#if s.Food == 'Y'}<i class="fa fa-spoon" title="Food here"></i>{/if}
-                                {#if s.Lodging == 'Y'}<i class="fa fa-hotel" title="Lodging here"></i>{/if}
+                            <button class="zoom-to" style="display:flex; gap:4px;" on:click={() => {zoomAndPopup(s, 16)}}>
+                                {#if s.Icon}<img style="height:1em;" src={`https://pinhead.ink/v20/${s.Icon}.svg`} alt=""/>{/if}
                                 {s.Name}</button>
                         </li>
+                        {/if}
                         {/each}
                     </ul>
                 </div>
